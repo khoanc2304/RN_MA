@@ -2,6 +2,9 @@ import React, { useContext, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, ActivityIndicator, Image, ListRenderItem } from 'react-native';
 import { AuthContext } from '../context/AuthContext';
 import api from '../services/api';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../navigation/AppNavigator';
 
 // Định nghĩa cấu trúc Sản phẩm
 export interface Product {
@@ -15,10 +18,14 @@ export interface Product {
   reviewCount?: number;
 }
 
+type HomeScreenNavProp = NativeStackNavigationProp<RootStackParamList, 'MainTabs'>;
+
 const HomeScreen: React.FC = () => {
-  const { userInfo, logout } = useContext(AuthContext);
+  const { userInfo } = useContext(AuthContext);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  
+  const navigation = useNavigation<HomeScreenNavProp>();
 
   useEffect(() => {
     fetchProducts();
@@ -36,7 +43,11 @@ const HomeScreen: React.FC = () => {
   };
 
   const renderProduct: ListRenderItem<Product> = ({ item }) => (
-    <View style={styles.card}>
+    <TouchableOpacity 
+      style={styles.card} 
+      activeOpacity={0.8}
+      onPress={() => navigation.navigate('ProductDetail', { productId: item._id })}
+    >
       <Image 
         source={{ uri: item.images && item.images.length > 0 ? item.images[0] : 'https://via.placeholder.com/150' }} 
         style={styles.image} 
@@ -46,16 +57,15 @@ const HomeScreen: React.FC = () => {
         <Text style={styles.price}>{item.price.toLocaleString('vi-VN')} đ</Text>
         <Text style={styles.brand}>{item.brand}</Text>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.welcome}>Xin chào, {userInfo?.name}</Text>
-        <TouchableOpacity style={styles.logoutBtn} onPress={logout}>
-          <Text style={styles.logoutTxt}>Đăng Xuất</Text>
-        </TouchableOpacity>
+        <Text style={styles.welcome}>
+          {userInfo ? `Xin chào, ${userInfo.name}` : 'Chào mừng đến Cửa hàng Giày!'}
+        </Text>
       </View>
 
       {loading ? (
@@ -78,26 +88,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f5',
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
     padding: 15,
     backgroundColor: '#fff',
     borderBottomWidth: 1,
     borderBottomColor: '#ddd',
+    alignItems: 'center',
   },
   welcome: {
     fontSize: 18,
-    fontWeight: 'bold',
-  },
-  logoutBtn: {
-    backgroundColor: '#dc3545',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 5,
-  },
-  logoutTxt: {
-    color: '#fff',
     fontWeight: 'bold',
   },
   card: {
