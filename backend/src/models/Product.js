@@ -22,7 +22,7 @@ const productSchema = new mongoose.Schema(
     },
     description: {
       type: String,
-      required: [true, 'Please add a description'],
+      required: [false],
     },
     price: {
       type: Number,
@@ -47,6 +47,11 @@ const productSchema = new mongoose.Schema(
     reviewCount: {
       type: Number,
       default: 0,
+    },
+    status: {
+      type: String,
+      enum: ['active', 'inactive'],
+      default: 'active',
     },
   },
   {

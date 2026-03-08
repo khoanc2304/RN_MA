@@ -1,11 +1,29 @@
 import Product from '../models/Product.js';
+import User from '../models/User.js';
+import jwt from 'jsonwebtoken';
 
 // @desc    Lấy tất cả sản phẩm
 // @route   GET /api/products
 // @access  Public
 const getProducts = async (req, res) => {
   try {
-    const products = await Product.find({});
+    let query = { status: 'active' }; // Mặc định khách và User chỉ xem hàng Active
+    
+    // Thầm lặng kiểm tra xem Request này có kèm Token của Admin không
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+      try {
+        const token = req.headers.authorization.split(' ')[1];
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const user = await User.findById(decoded.id);
+        if (user && user.role === 'admin') {
+          query = {}; // Admin được xem Toàn Thư (Bao gồm cả Inactive)
+        }
+      } catch (err) {
+        // Token dỏm hoặc hết hạn thì cứ coi như Khách thường, lờ đi
+      }
+    }
+
+    const products = await Product.find(query);
     res.json(products);
   } catch (error) {
     res.status(500).json({ message: 'Lỗi server', error: error.message });
@@ -50,7 +68,7 @@ const createProduct = async (req, res) => {
     const createdProduct = await product.save();
     res.status(201).json(createdProduct);
   } catch (error) {
-    res.status(500).json({ message: 'Lỗi server khi tạo sản phẩm', error: error.message });
+    res.status(500).json({ message: error.message, error: error.stack });
   }
 };
 
@@ -59,18 +77,21 @@ const createProduct = async (req, res) => {
 // @access  Private/Admin
 const updateProduct = async (req, res) => {
   try {
-    const { name, price, description, images, brand, categoryId, sizes } = req.body;
+    const { name, price, description, images, brand, categoryId, sizes, status } = req.body;
 
     const product = await Product.findById(req.params.id);
 
     if (product) {
-      product.name = name || product.name;
-      product.price = price || product.price;
-      product.description = description || product.description;
-      product.images = images || product.images;
-      product.brand = brand || product.brand;
-      product.category = categoryId || product.category;
-      product.sizes = sizes || product.sizes;
+      if (name !== undefined) product.name = name;
+      if (price !== undefined) product.price = price;
+      if (description !== undefined) product.description = description;
+      if (images !== undefined) product.images = images;
+      if (brand !== undefined) product.brand = brand;
+      if (categoryId !== undefined) product.category = categoryId;
+      if (sizes !== undefined) product.sizes = sizes;
+      if (status) {
+        product.status = status;
+      }
 
       const updatedProduct = await product.save();
       res.json(updatedProduct);
@@ -78,7 +99,7 @@ const updateProduct = async (req, res) => {
       res.status(404).json({ message: 'Không tìm thấy sản phẩm' });
     }
   } catch (error) {
-    res.status(500).json({ message: 'Lỗi server khi cập nhật sản phẩm', error: error.message });
+    res.status(500).json({ message: error.message, error: error.stack });
   }
 };
 
@@ -90,8 +111,9 @@ const deleteProduct = async (req, res) => {
     const product = await Product.findById(req.params.id);
 
     if (product) {
-      await Product.deleteOne({ _id: product._id });
-      res.json({ message: 'Sản phẩm đã bị xóa' });
+      product.status = 'inactive';
+      await product.save();
+      res.json({ message: 'Sản phẩm đã bị xóa (chuyển sang trạng thái ẩn)' });
     } else {
       res.status(404).json({ message: 'Không tìm thấy sản phẩm' });
     }

@@ -1,8 +1,8 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, ActivityIndicator, Image, ListRenderItem } from 'react-native';
 import { AuthContext } from '../context/AuthContext';
 import api from '../services/api';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 
@@ -27,10 +27,6 @@ const HomeScreen: React.FC = () => {
   
   const navigation = useNavigation<HomeScreenNavProp>();
 
-  useEffect(() => {
-    fetchProducts();
-  }, []);
-
   const fetchProducts = async () => {
     try {
       const { data } = await api.get<Product[]>('/products');
@@ -41,6 +37,12 @@ const HomeScreen: React.FC = () => {
       setLoading(false);
     }
   };
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchProducts();
+    }, [])
+  );
 
   const renderProduct: ListRenderItem<Product> = ({ item }) => (
     <TouchableOpacity 
@@ -55,7 +57,9 @@ const HomeScreen: React.FC = () => {
       <View style={styles.cardInfo}>
         <Text style={styles.name} numberOfLines={1}>{item.name}</Text>
         <Text style={styles.price}>{item.price.toLocaleString('vi-VN')} đ</Text>
-        <Text style={styles.brand}>{item.brand}</Text>
+        <Text style={styles.description} numberOfLines={2}>
+          {item.description || 'Chưa có mô tả cho sản phẩm này.'}
+        </Text>
       </View>
     </TouchableOpacity>
   );
@@ -135,6 +139,12 @@ const styles = StyleSheet.create({
   brand: {
     fontSize: 14,
     color: '#666',
+  },
+  description: {
+    fontSize: 13,
+    color: '#666',
+    lineHeight: 18,
+    marginTop: 4,
   },
 });
 

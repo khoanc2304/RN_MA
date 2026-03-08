@@ -10,7 +10,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'ProductDetail'>;
 
 const ProductDetailScreen: React.FC<Props> = ({ route, navigation }) => {
   const { productId } = route.params;
-  const { token } = useContext(AuthContext);
+  const { token, userInfo } = useContext(AuthContext);
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
@@ -47,6 +47,29 @@ const ProductDetailScreen: React.FC<Props> = ({ route, navigation }) => {
     Alert.alert('Thành công', 'Sản phẩm đã được thêm vào Giỏ hàng');
   };
 
+  const handleDeleteProduct = () => {
+    Alert.alert(
+      'Xác nhận xoá',
+      'Bạn có chắc chắn muốn xoá sản phẩm này không?',
+      [
+        { text: 'Hủy', style: 'cancel' },
+        { 
+          text: 'Xoá', 
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await api.delete(`/products/${productId}`);
+              Alert.alert('Thành công', 'Đã xoá sản phẩm');
+              navigation.goBack(); // Quay lại trang Home
+            } catch (error) {
+              Alert.alert('Lỗi', 'Không thể xoá sản phẩm này');
+            }
+          } 
+        }
+      ]
+    );
+  };
+
   if (loading) {
     return (
       <View style={styles.center}>
@@ -81,6 +104,25 @@ const ProductDetailScreen: React.FC<Props> = ({ route, navigation }) => {
         <TouchableOpacity style={styles.addToCartBtn} onPress={handleAddToCart}>
           <Text style={styles.addToCartTxt}>Thêm Vào Giỏ Hàng</Text>
         </TouchableOpacity>
+
+        {/* Các nút dành cho Admin */}
+        {userInfo?.role === 'admin' && (
+          <View style={styles.adminActionContainer}>
+            <TouchableOpacity 
+              style={styles.editBtn} 
+              onPress={() => navigation.navigate('EditProduct', { productId })}
+            >
+              <Text style={styles.editBtnTxt}>Chỉnh Sửa (Admin)</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.deleteBtn} 
+              onPress={handleDeleteProduct}
+            >
+              <Text style={styles.deleteBtnTxt}>Xoá Sản Phẩm</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
     </ScrollView>
   );
@@ -137,10 +179,41 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 8,
     alignItems: 'center',
+    marginBottom: 20,
   },
   addToCartTxt: {
     color: '#fff',
     fontSize: 18,
+    fontWeight: 'bold',
+  },
+  adminActionContainer: {
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
+    paddingTop: 20,
+    marginTop: 10,
+  },
+  editBtn: {
+    backgroundColor: '#ffc107',
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  editBtnTxt: {
+    color: '#000',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  deleteBtn: {
+    backgroundColor: '#dc3545',
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginBottom: 30,
+  },
+  deleteBtnTxt: {
+    color: '#fff',
+    fontSize: 16,
     fontWeight: 'bold',
   }
 });
