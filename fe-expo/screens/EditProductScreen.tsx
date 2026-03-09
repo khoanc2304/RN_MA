@@ -17,6 +17,7 @@ const EditProductScreen: React.FC<Props> = ({ route, navigation }) => {
   const [description, setDescription] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [status, setStatus] = useState('active');
+  const [sizes, setSizes] = useState<{ size: string, stock: string }[]>([]);
   
   const [categories, setCategories] = useState<{_id: string, name: string}[]>([]);
   const [loading, setLoading] = useState(true);
@@ -43,6 +44,12 @@ const EditProductScreen: React.FC<Props> = ({ route, navigation }) => {
       const existingCatId = productData.category?._id || productData.category;
       setCategoryId(existingCatId || (categoryRes.data.length > 0 ? categoryRes.data[0]._id : ''));
       
+      if (productData.sizes && productData.sizes.length > 0) {
+        setSizes(productData.sizes.map((s: any) => ({ size: s.size.toString(), stock: s.stock.toString() })));
+      } else {
+        setSizes([]);
+      }
+
       setDescription(productData.description || '');
       setImageUrl(productData.images && productData.images.length > 0 ? productData.images[0] : '');
       setStatus(productData.status || 'active');
@@ -62,6 +69,14 @@ const EditProductScreen: React.FC<Props> = ({ route, navigation }) => {
 
     try {
       setSaving(true);
+
+      const formattedSizes = sizes
+        .filter(s => s.size.trim() !== '' && s.stock.trim() !== '')
+        .map(s => ({
+          size: Number(s.size),
+          stock: Number(s.stock)
+        }));
+
       const payload = {
         name,
         brand,
@@ -69,6 +84,7 @@ const EditProductScreen: React.FC<Props> = ({ route, navigation }) => {
         price: Number(price),
         description,
         status,
+        sizes: formattedSizes,
         images: imageUrl ? [imageUrl] : []
       };
 
@@ -126,6 +142,46 @@ const EditProductScreen: React.FC<Props> = ({ route, navigation }) => {
           <Picker.Item label="Đã ẩn (Inactive)" value="inactive" />
         </Picker>
       </View>
+
+      <Text style={styles.label}>Kích thước & Số lượng (Tồn kho)</Text>
+      {sizes.map((s, index) => (
+        <View key={index} style={styles.sizeRow}>
+          <TextInput 
+            style={[styles.input, styles.sizeInput]} 
+            placeholder="Size (VD: 39)" 
+            keyboardType="numeric"
+            value={s.size}
+            onChangeText={(txt) => {
+              const newSizes = [...sizes];
+              newSizes[index].size = txt;
+              setSizes(newSizes);
+            }}
+          />
+          <TextInput 
+            style={[styles.input, styles.sizeInput]} 
+            placeholder="Tồn kho (VD: 10)" 
+            keyboardType="numeric"
+            value={s.stock}
+            onChangeText={(txt) => {
+              const newSizes = [...sizes];
+              newSizes[index].stock = txt;
+              setSizes(newSizes);
+            }}
+          />
+          <TouchableOpacity 
+            style={styles.removeSizeBtn}
+            onPress={() => setSizes(sizes.filter((_, i) => i !== index))}
+          >
+            <Text style={styles.removeSizeText}>Xoá</Text>
+          </TouchableOpacity>
+        </View>
+      ))}
+      <TouchableOpacity 
+        style={styles.addSizeBtn} 
+        onPress={() => setSizes([...sizes, { size: '', stock: '' }])}
+      >
+        <Text style={styles.addSizeBtnText}>+ Thêm Size</Text>
+      </TouchableOpacity>
 
       <Text style={styles.label}>Mô tả</Text>
       <TextInput 
@@ -206,6 +262,39 @@ const styles = StyleSheet.create({
   buttonText: {
     color: '#000',
     fontSize: 18,
+    fontWeight: 'bold',
+  },
+  sizeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+    gap: 10,
+  },
+  sizeInput: {
+    flex: 1,
+    marginBottom: 0,
+  },
+  removeSizeBtn: {
+    backgroundColor: '#dc3545',
+    padding: 12,
+    borderRadius: 8,
+  },
+  removeSizeText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  addSizeBtn: {
+    backgroundColor: '#fff3cd',
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#ffc107',
+    borderStyle: 'dashed',
+  },
+  addSizeBtnText: {
+    color: '#856404',
     fontWeight: 'bold',
   }
 });

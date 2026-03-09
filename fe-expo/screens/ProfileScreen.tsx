@@ -34,11 +34,21 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
       <Text style={styles.info}>Email: {userInfo?.email}</Text>
       <Text style={styles.info}>Vai trò: {userInfo?.role === 'admin' ? 'Quản trị viên' : 'Khách hàng'}</Text>
 
+      <TouchableOpacity 
+        style={[styles.button, { backgroundColor: '#17a2b8', marginTop: 20 }]} 
+        onPress={() => navigation.navigate('OrderHistory')}
+      >
+        <Text style={styles.buttonText}>📦 Lịch Sử Đơn Hàng Của Tôi</Text>
+      </TouchableOpacity>
+
       {userInfo?.role === 'admin' && (
         <View style={styles.adminSection}>
           <Text style={styles.sectionTitle}>Quản Trị System</Text>
           <TouchableOpacity style={styles.adminBtn} onPress={() => navigation.navigate('AddProduct')}>
             <Text style={styles.adminBtnText}>+ Thêm Sản Phẩm Mới</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.adminBtn} onPress={() => navigation.navigate('AdminOrders')}>
+            <Text style={styles.adminBtnText}>📋 Quản Lý Đơn Hàng Tổng</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.adminBtn} onPress={() => navigation.navigate('Revenue')}>
             <Text style={styles.adminBtnText}>📈 Xem Thống Kê / Doanh Thu</Text>

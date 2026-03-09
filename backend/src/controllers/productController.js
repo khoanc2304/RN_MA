@@ -9,6 +9,10 @@ const getProducts = async (req, res) => {
   try {
     let query = { status: 'active' }; // Mặc định khách và User chỉ xem hàng Active
     
+    if (req.query.category) {
+      query.category = req.query.category;
+    }
+    
     // Thầm lặng kiểm tra xem Request này có kèm Token của Admin không
     if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
       try {

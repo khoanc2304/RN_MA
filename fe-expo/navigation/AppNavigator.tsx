@@ -11,6 +11,9 @@ import ProductDetailScreen from '../screens/ProductDetailScreen';
 import AddProductScreen from '../screens/AddProductScreen';
 import EditProductScreen from '../screens/EditProductScreen';
 import RevenueScreen from '../screens/RevenueScreen';
+import CheckoutScreen from '../screens/CheckoutScreen';
+import OrderHistoryScreen from '../screens/OrderHistoryScreen';
+import AdminOrdersScreen from '../screens/AdminOrdersScreen';
 
 // Định nghĩa System Stack
 export type RootStackParamList = {
@@ -21,6 +24,9 @@ export type RootStackParamList = {
   AddProduct: undefined;
   EditProduct: { productId: string };
   Revenue: undefined;
+  Checkout: undefined;
+  OrderHistory: undefined;
+  AdminOrders: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -53,10 +59,15 @@ const AppNavigator: React.FC = () => {
         {/* Màn hình hiển thị cho Cả Guest & User */}
         <Stack.Screen name="ProductDetail" component={ProductDetailScreen} options={{ title: 'Chi tiết sản phẩm' }} />
         
+        {/* Checkout */}
+        <Stack.Screen name="Checkout" component={CheckoutScreen} options={{ title: 'Thanh Toán Đơn Hàng' }} />
+        
         {/* Các màn hình dành riêng cho Admin (Được truy cập an toàn từ Profile) */}
         <Stack.Screen name="AddProduct" component={AddProductScreen} options={{ title: 'Thêm Chủng Loại Giày' }} />
         <Stack.Screen name="EditProduct" component={EditProductScreen} options={{ title: 'Sửa Thông Tin Giày' }} />
         <Stack.Screen name="Revenue" component={RevenueScreen} options={{ title: 'Báo Cáo Doanh Thu' }} />
+        <Stack.Screen name="OrderHistory" component={OrderHistoryScreen} options={{ title: 'Lịch Sử Đơn Hàng' }} />
+        <Stack.Screen name="AdminOrders" component={AdminOrdersScreen} options={{ title: 'Quản Lý Đơn Hàng' }} />
       </Stack.Navigator>
     </NavigationContainer>
   );

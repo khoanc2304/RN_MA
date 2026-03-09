@@ -16,6 +16,7 @@ const AddProductScreen: React.FC = () => {
   const [imageUrl, setImageUrl] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [categories, setCategories] = useState<{_id: string, name: string}[]>([]);
+  const [sizes, setSizes] = useState<{ size: string, stock: string }[]>([]);
   const [loading, setLoading] = useState(false);
 
   const navigation = useNavigation<AddProductNavProp>();
@@ -44,12 +45,21 @@ const AddProductScreen: React.FC = () => {
 
     try {
       setLoading(true);
+
+      const formattedSizes = sizes
+        .filter(s => s.size.trim() !== '' && s.stock.trim() !== '')
+        .map(s => ({
+          size: Number(s.size),
+          stock: Number(s.stock)
+        }));
+
       const payload = {
         name,
         brand,
         categoryId,
         price: Number(price),
         description,
+        sizes: formattedSizes,
         images: imageUrl ? [imageUrl] : []
       };
 
@@ -89,6 +99,46 @@ const AddProductScreen: React.FC = () => {
 
       <Text style={styles.label}>Giá (VNĐ) *</Text>
       <TextInput style={styles.input} value={price} onChangeText={setPrice} keyboardType="numeric" placeholder="VD: 2500000" />
+
+      <Text style={styles.label}>Kích thước & Số lượng (Tồn kho)</Text>
+      {sizes.map((s, index) => (
+        <View key={index} style={styles.sizeRow}>
+          <TextInput 
+            style={[styles.input, styles.sizeInput]} 
+            placeholder="Size (VD: 39)" 
+            keyboardType="numeric"
+            value={s.size}
+            onChangeText={(txt) => {
+              const newSizes = [...sizes];
+              newSizes[index].size = txt;
+              setSizes(newSizes);
+            }}
+          />
+          <TextInput 
+            style={[styles.input, styles.sizeInput]} 
+            placeholder="Tồn kho (VD: 10)" 
+            keyboardType="numeric"
+            value={s.stock}
+            onChangeText={(txt) => {
+              const newSizes = [...sizes];
+              newSizes[index].stock = txt;
+              setSizes(newSizes);
+            }}
+          />
+          <TouchableOpacity 
+            style={styles.removeSizeBtn}
+            onPress={() => setSizes(sizes.filter((_, i) => i !== index))}
+          >
+            <Text style={styles.removeSizeText}>Xoá</Text>
+          </TouchableOpacity>
+        </View>
+      ))}
+      <TouchableOpacity 
+        style={styles.addSizeBtn} 
+        onPress={() => setSizes([...sizes, { size: '', stock: '' }])}
+      >
+        <Text style={styles.addSizeBtnText}>+ Thêm Size</Text>
+      </TouchableOpacity>
 
       <Text style={styles.label}>Mô tả</Text>
       <TextInput 
@@ -167,6 +217,39 @@ const styles = StyleSheet.create({
   buttonText: {
     color: '#fff',
     fontSize: 18,
+    fontWeight: 'bold',
+  },
+  sizeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+    gap: 10,
+  },
+  sizeInput: {
+    flex: 1,
+    marginBottom: 0,
+  },
+  removeSizeBtn: {
+    backgroundColor: '#dc3545',
+    padding: 12,
+    borderRadius: 8,
+  },
+  removeSizeText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  addSizeBtn: {
+    backgroundColor: '#e7f1ff',
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#007bff',
+    borderStyle: 'dashed',
+  },
+  addSizeBtnText: {
+    color: '#007bff',
     fontWeight: 'bold',
   }
 });
