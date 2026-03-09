@@ -30,7 +30,7 @@ const TabNavigator: React.FC = () => {
 
           return <Ionicons name={iconName} size={size} color={color} />;
         },
-        tabBarActiveTintColor: '#007bff',
+        tabBarActiveTintColor: '#3da9fc',
         tabBarInactiveTintColor: 'gray',
         headerShown: false, // Tắt Header của Tab (Dùng Header của Stack bên trong để thay thế)
       })}

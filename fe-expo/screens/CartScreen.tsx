@@ -105,41 +105,47 @@ const CartScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f9f9f9' },
-  emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f9f9f9', padding: 20 },
-  emptyText: { fontSize: 18, color: '#666', marginBottom: 20 },
-  shopButton: { backgroundColor: '#FF8C00', paddingHorizontal: 20, paddingVertical: 12, borderRadius: 8 },
-  shopButtonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+  container: { flex: 1, backgroundColor: '#f4f6f9' },
+  emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f4f6f9', padding: 20 },
+  emptyText: { fontSize: 18, color: '#5f6c7b', marginBottom: 20, fontWeight: '500' },
+  shopButton: { backgroundColor: '#3da9fc', paddingHorizontal: 25, paddingVertical: 14, borderRadius: 12, elevation: 3, shadowColor: '#3da9fc', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 },
+  shopButtonText: { color: '#ffffff', fontWeight: '800', fontSize: 16, letterSpacing: 0.5 },
   
   cartItem: {
     flexDirection: 'row',
-    backgroundColor: '#fff',
+    backgroundColor: '#ffffff',
     marginHorizontal: 15,
     marginTop: 15,
-    padding: 10,
-    borderRadius: 10,
-    elevation: 2,
+    padding: 12,
+    borderRadius: 15,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 5,
+    borderWidth: 1,
+    borderColor: '#f1f5f9'
   },
-  image: { width: 80, height: 80, borderRadius: 8, resizeMode: 'cover' },
+  image: { width: 90, height: 90, borderRadius: 12, resizeMode: 'cover' },
   itemInfo: { flex: 1, marginLeft: 15, justifyContent: 'space-between' },
-  name: { fontSize: 16, fontWeight: 'bold', color: '#333' },
-  itemSizeTx: { fontSize: 14, color: '#777', marginTop: 2 },
-  price: { fontSize: 15, color: '#e53935', fontWeight: 'bold', marginTop: 5 },
-  actionRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 10 },
+  name: { fontSize: 15, fontWeight: '700', color: '#2b2c34', lineHeight: 22 },
+  itemSizeTx: { fontSize: 13, color: '#94a1b2', marginTop: 4, fontWeight: '500' },
+  price: { fontSize: 16, color: '#3da9fc', fontWeight: '800', marginTop: 6 },
+  actionRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 12 },
   
-  quantityContainer: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#ddd', borderRadius: 4 },
-  qtyBtn: { paddingHorizontal: 12, paddingVertical: 4, backgroundColor: '#f1f1f1' },
-  qtyText: { fontSize: 16, fontWeight: 'bold' },
-  quantity: { paddingHorizontal: 15, fontSize: 16, fontWeight: '600' },
+  quantityContainer: { flexDirection: 'row', alignItems: 'center', borderWidth: 1.5, borderColor: '#e9ecef', borderRadius: 8, overflow: 'hidden' },
+  qtyBtn: { paddingHorizontal: 12, paddingVertical: 6, backgroundColor: '#f8f9fa' },
+  qtyText: { fontSize: 16, fontWeight: '700', color: '#495057' },
+  quantity: { paddingHorizontal: 15, fontSize: 15, fontWeight: '700', color: '#2b2c34' },
   
-  removeText: { color: '#888', textDecorationLine: 'underline', fontSize: 14 },
+  removeText: { color: '#ef4565', textDecorationLine: 'underline', fontSize: 13, fontWeight: '600' },
   
-  footer: { backgroundColor: '#fff', padding: 15, borderTopWidth: 1, borderTopColor: '#eee', elevation: 10 },
-  totalRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15 },
-  totalLabel: { fontSize: 16, color: '#333' },
-  totalAmount: { fontSize: 20, fontWeight: 'bold', color: '#e53935' },
-  checkoutBtn: { backgroundColor: '#000', padding: 15, borderRadius: 8, alignItems: 'center' },
-  checkoutText: { color: '#fff', fontWeight: 'bold', fontSize: 16 }
+  footer: { backgroundColor: '#ffffff', padding: 20, borderTopWidth: 1, borderTopColor: '#e9ecef', elevation: 10, shadowColor: '#000', shadowOffset: { width: 0, height: -3 }, shadowOpacity: 0.05, shadowRadius: 5 },
+  totalRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15, alignItems: 'center' },
+  totalLabel: { fontSize: 16, color: '#5f6c7b', fontWeight: '600' },
+  totalAmount: { fontSize: 22, fontWeight: '800', color: '#3da9fc' },
+  checkoutBtn: { backgroundColor: '#3da9fc', padding: 16, borderRadius: 12, alignItems: 'center', elevation: 3, shadowColor: '#3da9fc', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 },
+  checkoutText: { color: '#ffffff', fontWeight: '800', fontSize: 16, letterSpacing: 0.5 }
 });
 
 export default CartScreen;

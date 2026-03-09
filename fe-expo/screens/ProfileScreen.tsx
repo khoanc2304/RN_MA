@@ -35,7 +35,7 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
       <Text style={styles.info}>Vai trò: {userInfo?.role === 'admin' ? 'Quản trị viên' : 'Khách hàng'}</Text>
 
       <TouchableOpacity 
-        style={[styles.button, { backgroundColor: '#17a2b8', marginTop: 20 }]} 
+        style={[styles.button, { backgroundColor: '#3da9fc', marginTop: 20 }]} 
         onPress={() => navigation.navigate('OrderHistory')}
       >
         <Text style={styles.buttonText}>📦 Lịch Sử Đơn Hàng Của Tôi</Text>
@@ -56,7 +56,7 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
         </View>
       )}
 
-      <TouchableOpacity style={[styles.button, { backgroundColor: '#dc3545', marginTop: 30 }]} onPress={logout}>
+      <TouchableOpacity style={[styles.button, { backgroundColor: '#ef4565', marginTop: 30, shadowColor: '#ef4565' }]} onPress={logout}>
         <Text style={styles.buttonText}>Đăng Xuất</Text>
       </TouchableOpacity>
     </View>
@@ -68,71 +68,95 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
     justifyContent: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: '#f4f6f9',
   },
   title: {
     fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 10,
+    fontWeight: '800',
+    marginBottom: 20,
     textAlign: 'center',
+    color: '#2b2c34',
+    letterSpacing: 0.5,
   },
   subtitle: {
     fontSize: 16,
-    color: '#666',
+    color: '#5f6c7b',
     marginBottom: 30,
     textAlign: 'center',
   },
   info: {
-    fontSize: 18,
-    marginBottom: 10,
+    fontSize: 16,
+    marginBottom: 12,
+    color: '#495057',
+    fontWeight: '500',
+    backgroundColor: '#ffffff',
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#e9ecef',
   },
   button: {
-    backgroundColor: '#007bff',
-    padding: 15,
-    borderRadius: 8,
+    backgroundColor: '#3da9fc',
+    padding: 16,
+    borderRadius: 12,
     alignItems: 'center',
     marginBottom: 15,
+    elevation: 3,
+    shadowColor: '#3da9fc',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
   },
   buttonText: {
-    color: '#fff',
+    color: '#ffffff',
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '800',
+    letterSpacing: 0.5,
   },
   outlineButton: {
-    padding: 15,
-    borderRadius: 8,
+    padding: 16,
+    borderRadius: 12,
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#007bff'
+    borderWidth: 1.5,
+    borderColor: '#3da9fc',
+    backgroundColor: '#ffffff'
   },
   outlineButtonText: {
-    color: '#007bff',
+    color: '#3da9fc',
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '800',
   },
   adminSection: {
     marginTop: 30,
     paddingTop: 20,
-    borderTopWidth: 1,
-    borderTopColor: '#ddd'
+    borderTopWidth: 1.5,
+    borderTopColor: '#e9ecef'
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '800',
     marginBottom: 15,
-    color: '#d9534f'
+    color: '#ef4565',
+    letterSpacing: 0.5,
   },
   adminBtn: {
-    backgroundColor: '#28a745',
-    padding: 15,
-    borderRadius: 8,
-    marginBottom: 10,
+    backgroundColor: '#ffffff',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 12,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#e9ecef',
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
   },
   adminBtnText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
+    color: '#3da9fc',
+    fontWeight: '800',
+    fontSize: 15,
   }
 });
 
