@@ -1,16 +1,30 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { CartContext } from '../context/CartContext';
+import { AuthContext } from '../context/AuthContext';
 
 import HomeScreen from '../screens/HomeScreen';
 import CartScreen from '../screens/CartScreen';
 import ProfileScreen from '../screens/ProfileScreen';
+import ChatRoomScreen from '../screens/ChatRoomScreen';
+import AdminChatListScreen from '../screens/AdminChatListScreen';
 
 const Tab = createBottomTabNavigator();
 
+// Screen bọc để tránh lỗi định danh t0 và xử lý logic phân quyền
+const ChatTabScreen = () => {
+  const { userInfo } = useContext(AuthContext);
+  if (userInfo?.role === 'admin') {
+    return <AdminChatListScreen />;
+  }
+  return <ChatRoomScreen />;
+};
+
 const TabNavigator: React.FC = () => {
-  const { totalItems } = React.useContext(CartContext);
+  const { totalItems } = useContext(CartContext);
+  // Không cần lấy userInfo ở đây nữa nếu không dùng cho logic render Tab trực tiếp
+
 
   return (
     <Tab.Navigator
@@ -22,6 +36,8 @@ const TabNavigator: React.FC = () => {
             iconName = focused ? 'home' : 'home-outline';
           } else if (route.name === 'CartTab') {
             iconName = focused ? 'cart' : 'cart-outline';
+          } else if (route.name === 'ChatTab') {
+            iconName = focused ? 'chatbubble' : 'chatbubble-outline';
           } else if (route.name === 'ProfileTab') {
             iconName = focused ? 'person' : 'person-outline';
           } else {
@@ -47,6 +63,11 @@ const TabNavigator: React.FC = () => {
           title: 'Giỏ hàng',
           tabBarBadge: totalItems > 0 ? totalItems : undefined 
         }} 
+      />
+      <Tab.Screen 
+        name="ChatTab" 
+        component={ChatTabScreen} 
+        options={{ title: 'Chat' }} 
       />
       <Tab.Screen 
         name="ProfileTab" 

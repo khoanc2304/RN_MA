@@ -1,5 +1,6 @@
 import User from '../models/User.js';
 import jwt from 'jsonwebtoken';
+import asyncHandler from 'express-async-handler';
 
 // Hàm tạo JWT token
 const generateToken = (id) => {
@@ -93,8 +94,17 @@ const logoutUser = (req, res) => {
   res.status(200).json({ message: 'Đăng xuất thành công.' });
 };
 
+// @desc    Lấy danh sách Admin
+// @route   GET /api/auth/admin
+// @access  Private (Chỉ trả về các thông tin công khai cần thiết của Admin để chat)
+const getAdmins = asyncHandler(async (req, res) => {
+  const admins = await User.find({ role: 'admin' }).select('_id name email');
+  res.json(admins);
+});
+
 export {
   registerUser,
   loginUser,
   logoutUser,
+  getAdmins
 };

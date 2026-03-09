@@ -60,8 +60,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const { data } = await api.post('/auth/login', { email, password });
       
       if (data.token) {
+        // Luôn lưu token để Interceptor ở api.ts có thể lấy được và tránh lỗi 401
+        await AsyncStorage.setItem('userToken', data.token);
+        
         if (rememberMe) {
-          await AsyncStorage.setItem('userToken', data.token);
           await AsyncStorage.setItem('userInfo', JSON.stringify(data));
         }
         setToken(data.token);

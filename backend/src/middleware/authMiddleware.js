@@ -5,27 +5,26 @@ import User from '../models/User.js';
 const protect = async (req, res, next) => {
   let token;
 
-  // Kiểm tra header authorization có chứa token dạng "Bearer <token>" không
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
     try {
-      // Tách chữ 'Bearer ' ra, chỉ lấy token
       token = req.headers.authorization.split(' ')[1];
-
-      // Giải mã token
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-      // Tìm user trong database bằng ID từ payload của token (bỏ qua field password)
       req.user = await User.findById(decoded.id).select('-password');
+      
+      if (!req.user) {
+        return res.status(401).json({ message: 'Người dùng không tồn tại' });
+      }
 
-      next(); // Cho phép đi tiếp vào Controller
+      return next();
     } catch (error) {
-      console.error(error);
-      res.status(401).json({ message: 'Không được phép truy cập, token không hợp lệ' });
+      console.error('JWT Verify Error:', error.message);
+      return res.status(401).json({ message: 'Token không hợp lệ hoặc hết hạn' });
     }
   }
 
   if (!token) {
-    res.status(401).json({ message: 'Không được phép truy cập, không có token' });
+    return res.status(401).json({ message: 'Không có token' });
   }
 };
 
