@@ -28,7 +28,6 @@ export type RootStackParamList = {
   Checkout: undefined;
   OrderHistory: undefined;
   AdminOrders: undefined;
-  AdminChatRoom: { userId: string, userName: string };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -70,7 +69,6 @@ const AppNavigator: React.FC = () => {
         <Stack.Screen name="Revenue" component={RevenueScreen} options={{ title: 'Báo Cáo Doanh Thu' }} />
         <Stack.Screen name="OrderHistory" component={OrderHistoryScreen} options={{ title: 'Lịch Sử Đơn Hàng' }} />
         <Stack.Screen name="AdminOrders" component={AdminOrdersScreen} options={{ title: 'Quản Lý Đơn Hàng' }} />
-        <Stack.Screen name="AdminChatRoom" component={AdminChatRoomScreen} options={({ route }) => ({ title: `Chat với ${route.params?.userName || 'Khách'}` })} />
       </Stack.Navigator>
     </NavigationContainer>
   );

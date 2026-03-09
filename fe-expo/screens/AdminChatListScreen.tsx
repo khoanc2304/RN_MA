@@ -9,7 +9,9 @@ import api from '../services/api';
 import { AuthContext } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
 
-type AdminNavProp = NativeStackNavigationProp<RootStackParamList, 'MainTabs'>;
+import { ChatStackParamList } from '../navigation/TabNavigator';
+
+type AdminNavProp = NativeStackNavigationProp<ChatStackParamList, 'AdminChatList'>;
 
 interface ChatSession {
   _id: string; // UserId
@@ -43,16 +45,18 @@ const AdminChatListScreen: React.FC = () => {
   useEffect(() => {
     fetchChats();
 
+    const handleReceiveMessage = () => {
+      fetchChats(true);
+    };
+
     // Lắng nghe tin nhắn mới từ socket toàn cục để cập nhật danh sách
     if (socket) {
-      socket.on('receive_message', () => {
-        fetchChats(true);
-      });
+      socket.on('receive_message', handleReceiveMessage);
     }
 
     return () => {
       if (socket) {
-        socket.off('receive_message');
+        socket.off('receive_message', handleReceiveMessage);
       }
     };
   }, [userInfo, socket]);

@@ -7,9 +7,10 @@ import { useSocket } from '../context/SocketContext';
 import api from '../services/api';
 import { useRoute, RouteProp } from '@react-navigation/native';
 import { RootStackParamList } from '../navigation/AppNavigator';
+import { ChatStackParamList } from '../navigation/TabNavigator';
 
 // Định nghĩa kiểu dữ liệu route
-type AdminChatRouteProp = RouteProp<RootStackParamList, 'AdminChatRoom'>;
+type AdminChatRouteProp = RouteProp<ChatStackParamList, 'AdminChatRoom'>;
 
 interface Message {
   _id: string;
@@ -42,19 +43,21 @@ const AdminChatRoomScreen: React.FC = () => {
     fetchHistory();
 
     // 2. Lắng nghe tin nhắn mới từ socket toàn cục
+    const handleReceiveMessage = (newMsg: Message) => {
+      const sId = typeof newMsg.sender === 'object' ? newMsg.sender._id : newMsg.sender;
+      // Chỉ push vào màn hình nếu tin nhắn thuộc về Admin và User này
+      if (sId === userId || newMsg.receiver === userId || sId === userInfo?._id) {
+         setMessages((prev) => [...prev, newMsg]);
+      }
+    };
+
     if (socket) {
-      socket.on('receive_message', (newMsg: Message) => {
-        const sId = typeof newMsg.sender === 'object' ? newMsg.sender._id : newMsg.sender;
-        // Chỉ push vào màn hình nếu tin nhắn thuộc về Admin và User này
-        if (sId === userId || newMsg.receiver === userId || sId === userInfo?._id) {
-           setMessages((prev) => [...prev, newMsg]);
-        }
-      });
+      socket.on('receive_message', handleReceiveMessage);
     }
 
     return () => {
       if (socket) {
-        socket.off('receive_message');
+        socket.off('receive_message', handleReceiveMessage);
       }
     };
   }, [userInfo, userId, socket]);

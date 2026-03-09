@@ -21,6 +21,7 @@ import reviewBaseRoutes from './routes/reviewBaseRoutes.js';
 import categoryRoutes from './routes/categoryRoutes.js';
 import chatRoutes from './routes/chatRoutes.js';
 import Message from './models/Message.js';
+import User from './models/User.js';
 
 const app = express();
 const server = http.createServer(app);
@@ -95,17 +96,17 @@ io.on('connection', (socket) => {
       // 2. Gửi cho người gửi (để cập nhật UI)
       socket.emit('receive_message', populatedMsg);
 
-      // 3. Gửi cho người nhận
-      // Lấy thông tin người gửi và người nhận để quyết định broadcast
+      // 3. Gửi cho người nhận & đồng bộ Admin
       const senderUser = await User.findById(senderId);
       const receiverUser = await User.findById(receiverId);
 
-      // Nếu bất kỳ ai trong cuộc hội thoại là Admin, ta broadcast cho room 'admins'
+      // Nếu cuộc hội thoại có Admin tham gia (dù là gửi hay nhận)
       if ((senderUser && senderUser.role === 'admin') || (receiverUser && receiverUser.role === 'admin')) {
-        io.to('admins').emit('receive_message', populatedMsg);
+        // Gửi cho TẤT CẢ các Admin khác (để họ thấy tin nhắn realtime)
+        socket.to('admins').emit('receive_message', populatedMsg);
       }
 
-      // Vẫn gửi riêng cho người nhận nếu là khách hàng (để họ nhận được tin nhắn)
+      // Nếu người nhận là User (khách hàng), gửi riêng qua socket cá nhân của họ
       if (receiverUser && receiverUser.role === 'user') {
         const receiverSocketId = userSockets.get(receiverId);
         if (receiverSocketId) {

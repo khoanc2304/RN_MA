@@ -35,15 +35,17 @@ const ChatRoomScreen: React.FC = () => {
     fetchHistory();
 
     // 2. Lắng nghe tin nhắn mới từ socket toàn cục
+    const handleReceiveMessage = (newMsg: Message) => {
+      setMessages((prev) => [...prev, newMsg]);
+    };
+
     if (socket) {
-      socket.on('receive_message', (newMsg: Message) => {
-        setMessages((prev) => [...prev, newMsg]);
-      });
+      socket.on('receive_message', handleReceiveMessage);
     }
 
     return () => {
       if (socket) {
-        socket.off('receive_message');
+        socket.off('receive_message', handleReceiveMessage);
       }
     };
   }, [userInfo, socket]);

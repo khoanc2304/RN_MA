@@ -10,15 +10,47 @@ import ProfileScreen from '../screens/ProfileScreen';
 import ChatRoomScreen from '../screens/ChatRoomScreen';
 import AdminChatListScreen from '../screens/AdminChatListScreen';
 
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import AdminChatRoomScreen from '../screens/AdminChatRoomScreen';
+
+// Khai báo ParamList cho Chat Stack
+export type ChatStackParamList = {
+  AdminChatList: undefined;
+  AdminChatRoom: { userId: string; userName: string };
+  ChatRoom: undefined;
+};
+
+const ChatStack = createNativeStackNavigator<ChatStackParamList>();
+
 const Tab = createBottomTabNavigator();
 
-// Screen bọc để tránh lỗi định danh t0 và xử lý logic phân quyền
 const ChatTabScreen = () => {
   const { userInfo } = useContext(AuthContext);
-  if (userInfo?.role === 'admin') {
-    return <AdminChatListScreen />;
-  }
-  return <ChatRoomScreen />;
+
+  return (
+    <ChatStack.Navigator>
+      {userInfo?.role === 'admin' ? (
+        <>
+          <ChatStack.Screen 
+            name="AdminChatList" 
+            component={AdminChatListScreen} 
+            options={{ headerShown: false }} 
+          />
+          <ChatStack.Screen 
+            name="AdminChatRoom" 
+            component={AdminChatRoomScreen} 
+            options={({ route }) => ({ title: `Chat: ${route.params?.userName}` })} 
+          />
+        </>
+      ) : (
+        <ChatStack.Screen 
+          name="ChatRoom" 
+          component={ChatRoomScreen} 
+          options={{ headerShown: false }} 
+        />
+      )}
+    </ChatStack.Navigator>
+  );
 };
 
 const TabNavigator: React.FC = () => {
