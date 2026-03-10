@@ -192,4 +192,90 @@ const updateOrderStatusUser = async (req, res) => {
   }
 };
 
-export { addOrderItems, getOrders, getMyOrders, getOrderById, updateOrderStatusAdmin, updateOrderStatusUser };
+// @desc    Lấy thống kê đơn hàng (Admin Dashboard)
+// @route   GET /api/orders/stats
+// @access  Private/Admin
+const getOrderStats = async (req, res) => {
+  try {
+    // 1. Tính tổng doanh thu và số lượng đơn (không tính đơn đã huỷ)
+    const stats = await Order.aggregate([
+      { $match: { orderStatus: { $ne: 'cancelled' } } },
+      {
+        $group: {
+          _id: null,
+          totalRevenue: { $sum: '$totalPrice' },
+          totalOrders: { $sum: 1 },
+          deliveredOrders: {
+            $sum: { $cond: [{ $eq: ['$orderStatus', 'delivered'] }, 1, 0] }
+          }
+        }
+      }
+    ]);
+
+    // 2. Tính tổng sản phẩm đã bán
+    const itemsStats = await Order.aggregate([
+      { $match: { orderStatus: { $ne: 'cancelled' } } },
+      { $unwind: '$items' },
+      {
+        $group: {
+          _id: null,
+          totalItemsSold: { $sum: '$items.quantity' }
+        }
+      }
+    ]);
+
+    // 3. Lấy 5 đơn hàng mới nhất
+    const latestOrders = await Order.find({})
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .populate('userId', 'name email');
+
+    // 4. Xu hướng doanh thu 7 ngày gần nhất
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    const dailyRevenue = await Order.aggregate([
+      {
+        $match: {
+          orderStatus: { $ne: 'cancelled' },
+          createdAt: { $gte: sevenDaysAgo }
+        }
+      },
+      {
+        $group: {
+          _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+          revenue: { $sum: "$totalPrice" }
+        }
+      },
+      { $sort: { "_id": 1 } }
+    ]);
+
+    // Chuẩn hoá dữ liệu (điền các ngày bị thiếu bằng 0)
+    const trend = [];
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      const dateString = date.toISOString().split('T')[0];
+      const dayData = dailyRevenue.find(d => d._id === dateString);
+      trend.push({
+        date: dateString,
+        revenue: dayData ? dayData.revenue : 0
+      });
+    }
+
+    const result = {
+      totalRevenue: stats[0]?.totalRevenue || 0,
+      totalOrders: stats[0]?.totalOrders || 0,
+      deliveredOrders: stats[0]?.deliveredOrders || 0,
+      totalItemsSold: itemsStats[0]?.totalItemsSold || 0,
+      latestOrders,
+      revenueTrend: trend
+    };
+
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ message: 'Lỗi server khi lấy thống kê', error: error.message });
+  }
+};
+
+export { addOrderItems, getOrders, getMyOrders, getOrderById, updateOrderStatusAdmin, updateOrderStatusUser, getOrderStats };

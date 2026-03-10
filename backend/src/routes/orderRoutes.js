@@ -1,6 +1,6 @@
 import express from 'express';
 const router = express.Router();
-import { addOrderItems, getOrders, getMyOrders, getOrderById, updateOrderStatusAdmin, updateOrderStatusUser } from '../controllers/orderController.js';
+import { addOrderItems, getOrders, getMyOrders, getOrderById, updateOrderStatusAdmin, updateOrderStatusUser, getOrderStats } from '../controllers/orderController.js';
 
 // Import middleware phân quyền
 import { protect, admin } from '../middleware/authMiddleware.js';
@@ -10,6 +10,9 @@ import { protect, admin } from '../middleware/authMiddleware.js';
 router.route('/')
   .post(protect, addOrderItems)
   .get(protect, admin, getOrders);
+
+// Route thống kê cho Dashboard (Admin)
+router.route('/stats').get(protect, admin, getOrderStats);
 
 // Route GET /api/orders/myorders (Lịch sử đơn hàng của tôi)
 // Lưu ý: route này phải đặt trên route /:id để tránh Express nhầm lẫn 'myorders' là một ID

@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, ScrollView, Platform } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import api from '../services/api';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
+import { Ionicons, Feather } from '@expo/vector-icons';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'EditProduct'>;
 
@@ -101,106 +102,151 @@ const EditProductScreen: React.FC<Props> = ({ route, navigation }) => {
 
   if (loading) {
     return (
-      <View style={[styles.container, { justifyContent: 'center' }]}>
-        <ActivityIndicator size="large" color="#007bff" />
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color="#3da9fc" />
       </View>
     );
   }
 
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.title}>Cập Nhật Sản Phẩm</Text>
+    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <View style={styles.header}>
+        <Text style={styles.title}>Sửa Sản Phẩm</Text>
+        <Text style={styles.subTitle}>Cập nhật thông tin chi tiết của mẫu giày</Text>
+      </View>
       
-      <Text style={styles.label}>Tên sản phẩm *</Text>
-      <TextInput style={styles.input} value={name} onChangeText={setName} />
-
-      <Text style={styles.label}>Thương hiệu *</Text>
-      <TextInput style={styles.input} value={brand} onChangeText={setBrand} />
-
-      <Text style={styles.label}>Danh mục *</Text>
-      <View style={styles.pickerContainer}>
-        <Picker
-          selectedValue={categoryId}
-          onValueChange={(itemValue) => setCategoryId(itemValue)}
-        >
-          {categories.map((cat) => (
-            <Picker.Item key={cat._id} label={cat.name} value={cat._id} />
-          ))}
-        </Picker>
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>Tên sản phẩm *</Text>
+        <View style={styles.inputWrapper}>
+          <Feather name="box" size={20} color="#94a1b2" style={styles.inputIcon} />
+          <TextInput style={styles.input} value={name} onChangeText={setName} />
+        </View>
       </View>
 
-      <Text style={styles.label}>Giá (VNĐ) *</Text>
-      <TextInput style={styles.input} value={price} onChangeText={setPrice} keyboardType="numeric" />
-
-      <Text style={styles.label}>Trạng thái hiển thị</Text>
-      <View style={styles.pickerContainer}>
-        <Picker
-          selectedValue={status}
-          onValueChange={(itemValue) => setStatus(itemValue)}
-        >
-          <Picker.Item label="Đang bán (Active)" value="active" />
-          <Picker.Item label="Đã ẩn (Inactive)" value="inactive" />
-        </Picker>
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>Thương hiệu *</Text>
+        <View style={styles.inputWrapper}>
+          <Feather name="tag" size={20} color="#94a1b2" style={styles.inputIcon} />
+          <TextInput style={styles.input} value={brand} onChangeText={setBrand} />
+        </View>
       </View>
 
-      <Text style={styles.label}>Kích thước & Số lượng (Tồn kho)</Text>
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>Danh mục *</Text>
+        <View style={styles.pickerWrapper}>
+          <Picker
+            selectedValue={categoryId}
+            onValueChange={(itemValue) => setCategoryId(itemValue)}
+            style={styles.picker}
+          >
+            {categories.map((cat) => (
+              <Picker.Item key={cat._id} label={cat.name} value={cat._id} />
+            ))}
+          </Picker>
+        </View>
+      </View>
+
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>Giá (VNĐ) *</Text>
+        <View style={styles.inputWrapper}>
+          <Ionicons name="pricetag-outline" size={20} color="#94a1b2" style={styles.inputIcon} />
+          <TextInput style={styles.input} value={price} onChangeText={setPrice} keyboardType="numeric" />
+        </View>
+      </View>
+
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>Trạng thái hiển thị</Text>
+        <View style={styles.pickerWrapper}>
+          <Picker
+            selectedValue={status}
+            onValueChange={(itemValue) => setStatus(itemValue)}
+            style={styles.picker}
+          >
+            <Picker.Item label="Đang bán (Active)" value="active" />
+            <Picker.Item label="Đã ẩn (Inactive)" value="inactive" />
+          </Picker>
+        </View>
+      </View>
+
+      <View style={styles.sectionHeader}>
+        <Text style={styles.label}>Kích thước & Tồn kho</Text>
+        <TouchableOpacity 
+          style={styles.addSizeBtn} 
+          onPress={() => setSizes([...sizes, { size: '', stock: '' }])}
+        >
+          <Ionicons name="add-circle" size={18} color="#3da9fc" />
+          <Text style={styles.addSizeBtnText}>Thêm size</Text>
+        </TouchableOpacity>
+      </View>
+      
       {sizes.map((s, index) => (
         <View key={index} style={styles.sizeRow}>
-          <TextInput 
-            style={[styles.input, styles.sizeInput]} 
-            placeholder="Size (VD: 39)" 
-            keyboardType="numeric"
-            value={s.size}
-            onChangeText={(txt) => {
-              const newSizes = [...sizes];
-              newSizes[index].size = txt;
-              setSizes(newSizes);
-            }}
-          />
-          <TextInput 
-            style={[styles.input, styles.sizeInput]} 
-            placeholder="Tồn kho (VD: 10)" 
-            keyboardType="numeric"
-            value={s.stock}
-            onChangeText={(txt) => {
-              const newSizes = [...sizes];
-              newSizes[index].stock = txt;
-              setSizes(newSizes);
-            }}
-          />
+          <View style={[styles.inputWrapper, { flex: 1, marginBottom: 0 }]}>
+            <TextInput 
+              style={styles.input} 
+              placeholder="Size" 
+              keyboardType="numeric"
+              value={s.size}
+              onChangeText={(txt) => {
+                const newSizes = [...sizes];
+                newSizes[index].size = txt;
+                setSizes(newSizes);
+              }}
+            />
+          </View>
+          <View style={[styles.inputWrapper, { flex: 1, marginBottom: 0 }]}>
+            <TextInput 
+              style={styles.input} 
+              placeholder="Kho" 
+              keyboardType="numeric"
+              value={s.stock}
+              onChangeText={(txt) => {
+                const newSizes = [...sizes];
+                newSizes[index].stock = txt;
+                setSizes(newSizes);
+              }}
+            />
+          </View>
           <TouchableOpacity 
             style={styles.removeSizeBtn}
             onPress={() => setSizes(sizes.filter((_, i) => i !== index))}
           >
-            <Text style={styles.removeSizeText}>Xoá</Text>
+            <Ionicons name="trash-outline" size={20} color="#ff4757" />
           </TouchableOpacity>
         </View>
       ))}
-      <TouchableOpacity 
-        style={styles.addSizeBtn} 
-        onPress={() => setSizes([...sizes, { size: '', stock: '' }])}
-      >
-        <Text style={styles.addSizeBtnText}>+ Thêm Size</Text>
-      </TouchableOpacity>
 
-      <Text style={styles.label}>Mô tả</Text>
-      <TextInput 
-        style={[styles.input, styles.textArea]} 
-        value={description} 
-        onChangeText={setDescription} 
-        multiline 
-        numberOfLines={4} 
-      />
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>Mô tả sản phẩm</Text>
+        <TextInput 
+          style={[styles.input, styles.textArea]} 
+          value={description} 
+          onChangeText={setDescription} 
+          multiline 
+          numberOfLines={4} 
+          textAlignVertical="top"
+        />
+      </View>
 
-      <Text style={styles.label}>Link Hình ảnh (URL)</Text>
-      <TextInput style={styles.input} value={imageUrl} onChangeText={setImageUrl} />
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>Link Hình ảnh (URL)</Text>
+        <View style={styles.inputWrapper}>
+          <Feather name="image" size={20} color="#94a1b2" style={styles.inputIcon} />
+          <TextInput style={styles.input} value={imageUrl} onChangeText={setImageUrl} />
+        </View>
+      </View>
 
       <TouchableOpacity 
         style={[styles.button, saving && styles.buttonDisabled]} 
         onPress={handleEditProduct}
         disabled={saving}
       >
-        {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Lưu Thay Đổi</Text>}
+        {saving ? <ActivityIndicator color="#fff" /> : (
+          <View style={styles.buttonContent}>
+            <Ionicons name="save-outline" size={22} color="#fff" style={{ marginRight: 8 }} />
+            <Text style={styles.buttonText}>Lưu Thay Đổi</Text>
+          </View>
+        )}
       </TouchableOpacity>
     </ScrollView>
   );
@@ -209,94 +255,161 @@ const EditProductScreen: React.FC<Props> = ({ route, navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1, 
-    padding: 20,
-    backgroundColor: '#fff'
+    backgroundColor: '#f8f9fa',
+  },
+  content: {
+    padding: 24,
+    paddingBottom: 60,
+  },
+  header: {
+    marginBottom: 25,
   },
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    fontSize: 28,
+    fontWeight: '900',
+    color: '#2b2c34',
+  },
+  subTitle: {
+    fontSize: 15,
+    color: '#94a1b2',
+    marginTop: 4,
+    fontWeight: '500',
+  },
+  center: {
+    flex: 1, 
+    justifyContent: 'center', 
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+  },
+  inputGroup: {
     marginBottom: 20,
-    color: '#ffc107',
-    textShadowColor: 'rgba(0,0,0,0.1)',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 1,
   },
   label: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 5,
-    color: '#444'
+    fontSize: 15,
+    fontWeight: '700',
+    marginBottom: 8,
+    color: '#495057',
+    marginLeft: 4,
+  },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+    borderRadius: 15,
+    borderWidth: 1.5,
+    borderColor: '#f1f5f9',
+    paddingHorizontal: 15,
+    height: 56,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 5,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
+  },
+  inputIcon: {
+    marginRight: 12,
   },
   input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 15,
+    flex: 1,
     fontSize: 16,
-    backgroundColor: '#f9f9f9',
-  },
-  pickerContainer: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    marginBottom: 15,
-    backgroundColor: '#f9f9f9',
-    overflow: 'hidden',
+    color: '#2b2c34',
+    fontWeight: '600',
   },
   textArea: {
-    height: 100,
+    height: 120,
+    backgroundColor: '#ffffff',
+    borderRadius: 15,
+    borderWidth: 1.5,
+    borderColor: '#f1f5f9',
+    padding: 15,
+    fontSize: 16,
+    color: '#2b2c34',
     textAlignVertical: 'top',
   },
-  button: {
-    backgroundColor: '#ffc107',
-    padding: 15,
-    borderRadius: 8,
+  pickerWrapper: {
+    backgroundColor: '#ffffff',
+    borderRadius: 15,
+    borderWidth: 1.5,
+    borderColor: '#f1f5f9',
+    overflow: 'hidden',
+    height: 56,
+    justifyContent: 'center',
+  },
+  picker: {
+    height: 56,
+    color: '#2b2c34',
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 12,
     marginTop: 10,
-    marginBottom: 40,
   },
-  buttonDisabled: {
-    backgroundColor: '#ffe69c',
+  addSizeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#e3f2fd',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 10,
   },
-  buttonText: {
-    color: '#000',
-    fontSize: 18,
-    fontWeight: 'bold',
+  addSizeBtnText: {
+    color: '#3da9fc',
+    fontWeight: '700',
+    fontSize: 13,
+    marginLeft: 6,
   },
   sizeRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
-    gap: 10,
-  },
-  sizeInput: {
-    flex: 1,
-    marginBottom: 0,
+    marginBottom: 12,
+    gap: 12,
   },
   removeSizeBtn: {
-    backgroundColor: '#dc3545',
-    padding: 12,
-    borderRadius: 8,
-  },
-  removeSizeText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  addSizeBtn: {
-    backgroundColor: '#fff3cd',
-    padding: 12,
-    borderRadius: 8,
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: '#fff1f2',
+    justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 20,
     borderWidth: 1,
-    borderColor: '#ffc107',
-    borderStyle: 'dashed',
+    borderColor: '#ffe4e6',
   },
-  addSizeBtnText: {
-    color: '#856404',
-    fontWeight: 'bold',
-  }
+  button: {
+    backgroundColor: '#3da9fc',
+    height: 60,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 30,
+    elevation: 6,
+    shadowColor: '#3da9fc',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+  },
+  buttonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  buttonDisabled: {
+    backgroundColor: '#94d1ff',
+    elevation: 0,
+    shadowOpacity: 0,
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
 });
 
 export default EditProductScreen;

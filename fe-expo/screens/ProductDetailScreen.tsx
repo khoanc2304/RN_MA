@@ -1,14 +1,26 @@
 import React, { useEffect, useState, useContext, useMemo } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, ActivityIndicator, Alert, ScrollView } from 'react-native';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { View, Text, StyleSheet, Image, TouchableOpacity, ActivityIndicator, Alert, ScrollView, Modal, TouchableWithoutFeedback } from 'react-native';
+import { NativeStackScreenProps, NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
+import { HomeStackParamList } from '../navigation/TabNavigator';
 import { AuthContext } from '../context/AuthContext';
 import { CartContext } from '../context/CartContext';
+import { CompareContext } from '../context/CompareContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../services/api';
 import { Product } from './HomeScreen';
+import { Ionicons } from '@expo/vector-icons';
+import { CompositeNavigationProp } from '@react-navigation/native';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'ProductDetail'>;
+type ProductDetailNavProp = CompositeNavigationProp<
+  NativeStackNavigationProp<HomeStackParamList, 'ProductDetail'>,
+  NativeStackNavigationProp<RootStackParamList>
+>;
+
+type Props = {
+  route: NativeStackScreenProps<HomeStackParamList, 'ProductDetail'>['route'];
+  navigation: ProductDetailNavProp;
+};
 
 const ProductDetailScreen: React.FC<Props> = ({ route, navigation }) => {
   const { productId } = route.params;
@@ -19,6 +31,7 @@ const ProductDetailScreen: React.FC<Props> = ({ route, navigation }) => {
   const [selectedSize, setSelectedSize] = useState<number | null>(null);
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const { compareList, toggleCompare, compareModalVisible, setCompareModalVisible } = useContext(CompareContext);
 
   useEffect(() => {
     fetchProductDetail();
@@ -110,28 +123,6 @@ const ProductDetailScreen: React.FC<Props> = ({ route, navigation }) => {
     }
   };
 
-  const handleDeleteProduct = () => {
-    Alert.alert(
-      'Xác nhận xoá',
-      'Bạn có chắc chắn muốn xoá sản phẩm này không?',
-      [
-        { text: 'Hủy', style: 'cancel' },
-        {
-          text: 'Xoá',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await api.delete(`/products/${productId}`);
-              Alert.alert('Thành công', 'Đã xoá sản phẩm');
-              navigation.goBack(); // Quay lại trang Home
-            } catch (error) {
-              Alert.alert('Lỗi', 'Không thể xoá sản phẩm này');
-            }
-          }
-        }
-      ]
-    );
-  };
 
   if (loading) {
     return (
@@ -150,7 +141,8 @@ const ProductDetailScreen: React.FC<Props> = ({ route, navigation }) => {
   }
 
   return (
-    <ScrollView style={styles.container}>
+    <View style={{ flex: 1 }}>
+      <ScrollView style={styles.container}>
       <Image
         source={{ uri: selectedImage }}
         style={styles.mainImage}
@@ -224,6 +216,21 @@ const ProductDetailScreen: React.FC<Props> = ({ route, navigation }) => {
           <Text style={styles.addToCartTxt}>Thêm Vào Giỏ Hàng</Text>
         </TouchableOpacity>
 
+        {/* Nút So sánh cho sản phẩm hiện tại */}
+        <TouchableOpacity 
+          style={[styles.compareActionBtn, compareList.find(p => p._id === productId) && styles.compareActionBtnActive]} 
+          onPress={() => product && toggleCompare(product)}
+        >
+          <Ionicons 
+            name={compareList.find(p => p._id === productId) ? "git-compare" : "git-compare-outline"} 
+            size={22} 
+            color={compareList.find(p => p._id === productId) ? "#ffffff" : "#3da9fc"} 
+          />
+          <Text style={[styles.compareActionTxt, compareList.find(p => p._id === productId) && styles.compareActionTxtActive]}>
+            {compareList.find(p => p._id === productId) ? "Đã trong danh sách so sánh" : "Thêm vào so sánh"}
+          </Text>
+        </TouchableOpacity>
+
         {/* Các Sản Phẩm Gợi Ý */}
         {relatedProducts.length > 0 && (
           <View style={styles.relatedContainer}>
@@ -241,32 +248,90 @@ const ProductDetailScreen: React.FC<Props> = ({ route, navigation }) => {
                   />
                   <Text style={styles.relatedName} numberOfLines={1}>{item.name}</Text>
                   <Text style={styles.relatedPrice}>{item.price.toLocaleString('vi-VN')} đ</Text>
+                  
+                  <TouchableOpacity 
+                    style={styles.relatedCompareBtn}
+                    onPress={(e) => {
+                      e.stopPropagation();
+                      toggleCompare(item);
+                    }}
+                  >
+                    <Ionicons 
+                      name={compareList.find(p => p._id === item._id) ? "checkmark-circle" : "add-circle-outline"} 
+                      size={14} 
+                      color={compareList.find(p => p._id === item._id) ? "#3da9fc" : "#94a1b2"} 
+                    />
+                    <Text style={[styles.relatedCompareText, compareList.find(p => p._id === item._id) && styles.relatedCompareTextActive]}>
+                      So sánh
+                    </Text>
+                  </TouchableOpacity>
                 </TouchableOpacity>
               ))}
             </ScrollView>
           </View>
         )}
 
-        {/* Các nút dành cho Admin */}
-        {userInfo?.role === 'admin' && (
-          <View style={styles.adminActionContainer}>
-            <TouchableOpacity
-              style={styles.editBtn}
-              onPress={() => navigation.navigate('EditProduct', { productId })}
-            >
-              <Text style={styles.editBtnTxt}>Chỉnh Sửa (Admin)</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.deleteBtn}
-              onPress={handleDeleteProduct}
-            >
-              <Text style={styles.deleteBtnTxt}>Xoá Sản Phẩm</Text>
-            </TouchableOpacity>
-          </View>
-        )}
       </View>
-    </ScrollView>
+
+      </ScrollView>
+
+      {/* Floating Compare Button (giống Home) - FIXED */}
+      {compareList.length > 0 && (
+        <TouchableOpacity style={styles.fabCompare} onPress={() => setCompareModalVisible(true)}>
+          <Ionicons name="git-compare" size={26} color="#ffffff" />
+          <View style={styles.fabBadge}>
+            <Text style={styles.fabBadgeText}>{compareList.length}</Text>
+          </View>
+        </TouchableOpacity>
+      )}
+
+      {/* Compare Modal */}
+      <Modal visible={compareModalVisible} transparent={true} animationType="slide" onRequestClose={() => setCompareModalVisible(false)}>
+        <TouchableOpacity style={styles.modalOverlayCompare} activeOpacity={1} onPressOut={() => setCompareModalVisible(false)}>
+          <TouchableWithoutFeedback>
+            <View style={styles.compareModalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>So Sánh Sản Phẩm</Text>
+                <TouchableOpacity onPress={() => setCompareModalVisible(false)}>
+                  <Ionicons name="close" size={28} color="#2b2c34" />
+                </TouchableOpacity>
+              </View>
+              
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.compareScrollContent}>
+                 <View style={styles.compareLabelCol}>
+                   <View style={styles.compareCellImg} />
+                   <Text style={styles.compareCellLabel}>Tên SP</Text>
+                   <Text style={styles.compareCellLabel}>Thương hiệu</Text>
+                   <Text style={styles.compareCellLabel}>Giá</Text>
+                   <Text style={styles.compareCellLabel}>Đánh giá</Text>
+                   <Text style={[styles.compareCellLabel, {height: 60}]}>Kích cỡ</Text>
+                   <Text style={styles.compareCellLabel}></Text>
+                 </View>
+
+                 {compareList.map(p => (
+                   <View key={p._id} style={styles.compareProductCol}>
+                     <View style={styles.compareCellImg}>
+                       <Image source={{ uri: p.images && p.images.length > 0 ? p.images[0] : 'https://via.placeholder.com/150' }} style={styles.compareImg} />
+                     </View>
+                     <Text style={styles.compareCellText} numberOfLines={2}>{p.name}</Text>
+                     <Text style={styles.compareCellText}>{p.brand || '---'}</Text>
+                     <Text style={styles.compareCellTextPrice}>{p.price.toLocaleString('vi-VN')} đ</Text>
+                     <Text style={styles.compareCellText}>{p.rating ? `${p.rating} ⭐` : 'Chưa có'}</Text>
+                     <Text style={[styles.compareCellText, {height: 60}]} numberOfLines={3}>
+                       {p.sizes?.filter(s => s.stock > 0).map(s => s.size).join(', ') || 'Hết hàng'}
+                     </Text>
+                     
+                     <TouchableOpacity style={styles.removeCompareBtn} onPress={() => toggleCompare(p)}>
+                       <Text style={styles.removeCompareText}>Bỏ chọn</Text>
+                     </TouchableOpacity>
+                   </View>
+                 ))}
+              </ScrollView>
+            </View>
+          </TouchableWithoutFeedback>
+        </TouchableOpacity>
+      </Modal>
+    </View>
   );
 };
 
@@ -283,7 +348,7 @@ const styles = StyleSheet.create({
   mainImage: {
     width: '100%',
     height: 380,
-    resizeMode: 'cover',
+    resizeMode: 'contain', // Đổi từ cover sang contain
     backgroundColor: '#f8f9fa',
   },
   thumbnailContainer: {
@@ -469,9 +534,10 @@ const styles = StyleSheet.create({
   relatedImage: {
     width: '100%',
     height: 120,
-    resizeMode: 'cover',
+    resizeMode: 'contain', // Đổi từ cover sang contain
     borderRadius: 8,
     marginBottom: 12,
+    backgroundColor: '#f8f9fa',
   },
   relatedName: {
     fontSize: 14,
@@ -484,6 +550,176 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#3da9fc',
     fontWeight: '800',
+  },
+  compareActionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 14,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: '#3da9fc',
+    marginBottom: 25,
+    gap: 10,
+  },
+  compareActionBtnActive: {
+    backgroundColor: '#3da9fc',
+  },
+  compareActionTxt: {
+    fontSize: 16,
+    color: '#3da9fc',
+    fontWeight: '700',
+  },
+  compareActionTxtActive: {
+    color: '#ffffff',
+  },
+  relatedCompareBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#f1f5f9',
+  },
+  relatedCompareText: {
+    fontSize: 12,
+    color: '#94a1b2',
+    fontWeight: '600',
+  },
+  relatedCompareTextActive: {
+    color: '#3da9fc',
+  },
+
+  // Comparison Styles (Sync from Home)
+  fabCompare: {
+    position: 'absolute',
+    bottom: 20,
+    right: 20,
+    backgroundColor: '#3da9fc',
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 8,
+    shadowColor: '#3da9fc',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.5,
+    shadowRadius: 10,
+    zIndex: 100,
+  },
+  fabBadge: {
+    position: 'absolute',
+    top: -5,
+    right: -5,
+    backgroundColor: '#ff4757',
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#ffffff',
+  },
+  fabBadgeText: {
+    color: '#ffffff',
+    fontSize: 11,
+    fontWeight: 'bold',
+  },
+  modalOverlayCompare: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  compareModalContent: {
+    backgroundColor: '#ffffff',
+    borderTopLeftRadius: 25,
+    borderTopRightRadius: 25,
+    paddingTop: 24,
+    paddingHorizontal: 20,
+    paddingBottom: 40,
+    height: '75%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f1f5f9',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#2b2c34',
+  },
+  compareScrollContent: {
+    paddingRight: 10,
+  },
+  compareLabelCol: {
+    width: 90,
+    borderRightWidth: 1,
+    borderRightColor: '#e9ecef',
+    marginRight: 15,
+  },
+  compareProductCol: {
+    width: 140,
+    marginRight: 15,
+    alignItems: 'center',
+    borderRightWidth: 1,
+    borderRightColor: '#f1f5f9',
+    paddingRight: 15,
+  },
+  compareCellImg: {
+    height: 120,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  compareImg: {
+    width: 110,
+    height: 110,
+    resizeMode: 'contain',
+    borderRadius: 10,
+  },
+  compareCellLabel: {
+    height: 48,
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#94a1b2',
+    textAlignVertical: 'center',
+  },
+  compareCellText: {
+    height: 48,
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#2b2c34',
+    textAlign: 'center',
+    textAlignVertical: 'center',
+  },
+  compareCellTextPrice: {
+    height: 48,
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#3da9fc',
+    textAlign: 'center',
+    textAlignVertical: 'center',
+  },
+  removeCompareBtn: {
+    marginTop: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    backgroundColor: '#ffefef',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ffcaca',
+  },
+  removeCompareText: {
+    color: '#ff4757',
+    fontSize: 13,
+    fontWeight: '700'
   }
 });
 

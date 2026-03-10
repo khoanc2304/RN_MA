@@ -2,12 +2,16 @@ import React, { useContext, useState, useCallback, useMemo, useRef, useEffect } 
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, ActivityIndicator, Image, ListRenderItem, TextInput, ScrollView, Modal, Dimensions, TouchableWithoutFeedback, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AuthContext } from '../context/AuthContext';
+import { CompareContext } from '../context/CompareContext';
 import api from '../services/api';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Picker } from '@react-native-picker/picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { RootStackParamList } from '../navigation/AppNavigator';
+import { HomeStackParamList } from '../navigation/TabNavigator';
+import { CompositeNavigationProp } from '@react-navigation/native';
+import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 
 const { width } = Dimensions.get('window');
 const carouselImages = [
@@ -30,7 +34,10 @@ export interface Product {
   sizes?: { size: number, stock: number }[];
 }
 
-type HomeScreenNavProp = NativeStackNavigationProp<RootStackParamList, 'MainTabs'>;
+type HomeScreenNavProp = CompositeNavigationProp<
+  NativeStackNavigationProp<HomeStackParamList, 'Home'>,
+  NativeStackNavigationProp<RootStackParamList>
+>;
 
 const HomeScreen: React.FC = () => {
   const { userInfo } = useContext(AuthContext);
@@ -44,25 +51,42 @@ const HomeScreen: React.FC = () => {
   const [sortOrder, setSortOrder] = useState('default');
   const [filterRating, setFilterRating] = useState(0);
   const [filterVisible, setFilterVisible] = useState(false);
-  
-  const [compareList, setCompareList] = useState<Product[]>([]);
-  const [compareModalVisible, setCompareModalVisible] = useState(false);
-  
+  const { compareList, toggleCompare, compareModalVisible, setCompareModalVisible } = useContext(CompareContext);
   const [recentProducts, setRecentProducts] = useState<Product[]>([]);
+  
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
+  const timerRef = useRef<any>(null);
+
+  const goToNext = () => {
+    if (carouselImages.length > 0) {
+      let nextIndex = (currentSlideIndex + 1) % carouselImages.length;
+      flatListRef.current?.scrollToOffset({ offset: nextIndex * width, animated: true });
+    }
+  };
+
+  const goToPrev = () => {
+    if (carouselImages.length > 0) {
+      let prevIndex = (currentSlideIndex - 1 + carouselImages.length) % carouselImages.length;
+      flatListRef.current?.scrollToOffset({ offset: prevIndex * width, animated: true });
+    }
+  };
 
   useEffect(() => {
-    let interval: ReturnType<typeof setInterval>;
-    if (carouselImages.length > 0) {
-      interval = setInterval(() => {
-        let nextIndex = (currentSlideIndex + 1) % carouselImages.length;
-        setCurrentSlideIndex(nextIndex);
-        flatListRef.current?.scrollToIndex({ index: nextIndex, animated: true });
-      }, 3500); // 3.5 giây lướt ảnh 1 lần
+    // Tắt timer cũ (nếu có) khi index thay đổi hoặc component unmount
+    if (timerRef.current) clearTimeout(timerRef.current);
+
+    // Chỉ bắt đầu timer nếu không đang loading dữ liệu
+    if (!loading) {
+      timerRef.current = setTimeout(() => {
+        goToNext();
+      }, 2000); // Đợi đúng 2s sau khi đã dừng ở ảnh hiện tại
     }
-    return () => clearInterval(interval);
-  }, [currentSlideIndex]);
+
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, [currentSlideIndex, loading]);
   
   const navigation = useNavigation<HomeScreenNavProp>();
 
@@ -146,17 +170,6 @@ const HomeScreen: React.FC = () => {
     await AsyncStorage.setItem(historyKey, JSON.stringify(updated));
   };
 
-  const toggleCompare = (prod: Product) => {
-    if (compareList.find(p => p._id === prod._id)) {
-      setCompareList(compareList.filter(p => p._id !== prod._id));
-    } else {
-      if (compareList.length >= 3) {
-        Alert.alert('Giới hạn so sánh', 'Bạn chỉ có thể so sánh tối đa 3 sản phẩm cùng lúc.');
-        return;
-      }
-      setCompareList([...compareList, prod]);
-    }
-  };
 
   const getCategoryName = (catId?: string) => {
     const cat = categories.find(c => c._id === catId);
@@ -203,20 +216,52 @@ const HomeScreen: React.FC = () => {
           pagingEnabled
           showsHorizontalScrollIndicator={false}
           keyExtractor={(_, index) => index.toString()}
-          onScrollToIndexFailed={(info) => {
-            const wait = new Promise(resolve => setTimeout(resolve, 500));
-            wait.then(() => {
-              flatListRef.current?.scrollToIndex({ index: info.index, animated: true });
-            });
+          getItemLayout={(_, index) => ({
+            length: width,
+            offset: width * index,
+            index,
+          })}
+          onScroll={(e) => {
+            // Chỉ cập nhật visual dots nếu cần, nhưng logic chính phụ thuộc vào Momentum
+            const x = e.nativeEvent.contentOffset.x;
+            const index = Math.round(x / width);
+            // Không set index ở đây để tránh reset timer liên tục khi đang lướt
           }}
+          scrollEventThrottle={16}
           onMomentumScrollEnd={(e) => {
-             const newIndex = Math.round(e.nativeEvent.contentOffset.x / width);
-             setCurrentSlideIndex(newIndex);
+             const x = e.nativeEvent.contentOffset.x;
+             const index = Math.round(x / width);
+             if (index !== currentSlideIndex) {
+                setCurrentSlideIndex(index);
+             }
           }}
           renderItem={({item}) => (
-             <Image source={{ uri: item }} style={styles.carouselImage} />
+             <View style={{ width: width, position: 'relative' }}>
+                <Image source={{ uri: item }} style={styles.carouselImage} />
+                <TouchableOpacity 
+                   style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: width / 3, zIndex: 10 }} 
+                   onPress={goToPrev}
+                   activeOpacity={1}
+                />
+                <TouchableOpacity 
+                   style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: width / 3, zIndex: 10 }} 
+                   onPress={goToNext}
+                   activeOpacity={1}
+                />
+             </View>
           )}
         />
+        <View style={styles.paginationContainer}>
+           {carouselImages.map((_, index) => (
+             <View 
+               key={index} 
+               style={[
+                 styles.dot, 
+                 currentSlideIndex === index && styles.dotActive
+               ]} 
+             />
+           ))}
+        </View>
       </View>
 
       {/* Sản phẩm vừa xem (Chỉ hiện nếu có dữ liệu) */}
@@ -459,13 +504,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f5',
   },
   header: {
-    paddingTop: 50,
-    paddingBottom: 40,
+    paddingTop: 60,
+    paddingBottom: 60,
     paddingHorizontal: 20,
-    backgroundColor: '#3da9fc', // Xanh da trời chủ đạo
+    backgroundColor: '#3da9fc', 
     alignItems: 'center',
-    borderBottomLeftRadius: 15,
-    borderBottomRightRadius: 15,
+    borderBottomLeftRadius: 40,
+    borderBottomRightRadius: 40,
   },
   welcome: {
     fontSize: 20,
@@ -475,15 +520,15 @@ const styles = StyleSheet.create({
   },
   filterSection: {
     backgroundColor: '#ffffff',
-    padding: 15,
-    marginHorizontal: 15,
-    marginTop: -25, // Kéo lên đè 1 phần Header
-    borderRadius: 15,
-    elevation: 5,
+    padding: 16,
+    marginHorizontal: 20,
+    marginTop: -35, 
+    borderRadius: 24,
+    elevation: 8,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.1,
-    shadowRadius: 10,
+    shadowRadius: 20,
     zIndex: 10,
   },
   searchRow: {
@@ -526,16 +571,46 @@ const styles = StyleSheet.create({
   
   // Custom Banner / Carousel 
   carouselContainer: {
-    height: 200, // Tăng chiều cao lên 200px
-    marginTop: 20,
-    marginBottom: 15,
+    height: 380,
+    marginTop: 0,
+    marginBottom: 20,
+    position: 'relative',
+    backgroundColor: '#ffffff',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
   },
   carouselImage: {
-    width: width - 30, // Sử dụng toàn chiều rộng trừ lề
-    height: 200,
-    resizeMode: 'cover',
-    borderRadius: 15,
-    marginHorizontal: 15,
+    width: width,
+    height: 380,
+    resizeMode: 'contain',
+    backgroundColor: '#ffffff',
+  },
+  paginationContainer: {
+    flexDirection: 'row',
+    position: 'absolute',
+    bottom: 25,
+    alignSelf: 'center',
+    gap: 10,
+    backgroundColor: 'rgba(255,255,255,0.8)',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 25,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.05)',
+  },
+  dot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: 'rgba(0,0,0,0.1)',
+  },
+  dotActive: {
+    width: 20, 
+    borderRadius: 10,
+    backgroundColor: '#3da9fc',
   },
 
   // Recently Viewed Section
@@ -597,9 +672,10 @@ const styles = StyleSheet.create({
   recentImg: {
     width: 100,
     height: 100,
-    resizeMode: 'cover',
+    resizeMode: 'contain', // Đổi từ cover sang contain để không bị mất ảnh
     borderRadius: 8,
     marginBottom: 8,
+    backgroundColor: '#f8f9fa', // Thêm nền xám nhẹ
   },
   recentName: {
     fontSize: 12,
@@ -622,24 +698,25 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: '#ffffff',
     width: '48%', 
-    marginTop: 15,
-    borderRadius: 15,
+    marginTop: 18,
+    borderRadius: 20,
     overflow: 'hidden',
     flexDirection: 'column', 
-    elevation: 3, 
+    elevation: 5, 
     shadowColor: '#000', 
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
     borderWidth: 1,
     borderColor: '#f1f5f9'
   },
   image: {
     width: '100%',
-    height: 160, 
-    resizeMode: 'cover',
-    borderTopLeftRadius: 15,
-    borderTopRightRadius: 15,
+    height: 180, 
+    resizeMode: 'contain', 
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    backgroundColor: '#f8f9fa', 
   },
   cardInfo: {
     padding: 12,

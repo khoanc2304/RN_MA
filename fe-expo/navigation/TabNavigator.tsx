@@ -9,9 +9,86 @@ import CartScreen from '../screens/CartScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import ChatRoomScreen from '../screens/ChatRoomScreen';
 import AdminChatListScreen from '../screens/AdminChatListScreen';
+import ProductDetailScreen from '../screens/ProductDetailScreen';
+import AdminOrdersScreen from '../screens/AdminOrdersScreen';
+import AdminProductsScreen from '../screens/AdminProductsScreen';
+import AddProductScreen from '../screens/AddProductScreen';
+import EditProductScreen from '../screens/EditProductScreen';
+import RevenueScreen from '../screens/RevenueScreen';
+import OrderHistoryScreen from '../screens/OrderHistoryScreen';
+import CheckoutScreen from '../screens/CheckoutScreen';
+import AdminChatRoomScreen from '../screens/AdminChatRoomScreen';
 
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import AdminChatRoomScreen from '../screens/AdminChatRoomScreen';
+
+// Khai báo ParamList cho Home Stack
+export type HomeStackParamList = {
+  Home: undefined;
+  ProductDetail: { productId: string };
+};
+
+const HomeStack = createNativeStackNavigator<HomeStackParamList>();
+
+const HomeStackScreen = () => {
+  return (
+    <HomeStack.Navigator>
+      <HomeStack.Screen 
+        name="Home" 
+        component={HomeScreen} 
+        options={{ headerShown: false }} 
+      />
+      <HomeStack.Screen 
+        name="ProductDetail" 
+        component={ProductDetailScreen} 
+        options={{ title: 'Chi tiết sản phẩm' }} 
+      />
+    </HomeStack.Navigator>
+  );
+};
+
+// Khai báo ParamList cho Cart Stack
+export type CartStackParamList = {
+  Cart: undefined;
+  Checkout: undefined;
+};
+
+const CartStack = createNativeStackNavigator<CartStackParamList>();
+
+const CartStackScreen = () => {
+  return (
+    <CartStack.Navigator>
+      <CartStack.Screen name="Cart" component={CartScreen} options={{ headerShown: false }} />
+      <CartStack.Screen name="Checkout" component={CheckoutScreen} options={{ title: 'Thanh toán' }} />
+    </CartStack.Navigator>
+  );
+};
+
+// Khai báo ParamList cho Profile Stack
+export type ProfileStackParamList = {
+  Profile: undefined;
+  OrderHistory: undefined;
+  AdminOrders: undefined;
+  AdminProducts: undefined;
+  AddProduct: undefined;
+  EditProduct: { productId: string };
+  Revenue: undefined;
+};
+
+const ProfileStack = createNativeStackNavigator<ProfileStackParamList>();
+
+const ProfileStackScreen = () => {
+  return (
+    <ProfileStack.Navigator>
+      <ProfileStack.Screen name="Profile" component={ProfileScreen} options={{ headerShown: false }} />
+      <ProfileStack.Screen name="OrderHistory" component={OrderHistoryScreen} options={{ title: 'Lịch sử đơn hàng' }} />
+      <ProfileStack.Screen name="AdminOrders" component={AdminOrdersScreen} options={{ title: 'Quản lý đơn hàng' }} />
+      <ProfileStack.Screen name="AdminProducts" component={AdminProductsScreen} options={{ title: 'Quản lý sản phẩm' }} />
+      <ProfileStack.Screen name="AddProduct" component={AddProductScreen} options={{ title: 'Thêm sản phẩm' }} />
+      <ProfileStack.Screen name="EditProduct" component={EditProductScreen} options={{ title: 'Sửa sản phẩm' }} />
+      <ProfileStack.Screen name="Revenue" component={RevenueScreen} options={{ title: 'Thống kê doanh thu' }} />
+    </ProfileStack.Navigator>
+  );
+};
 
 // Khai báo ParamList cho Chat Stack
 export type ChatStackParamList = {
@@ -21,8 +98,6 @@ export type ChatStackParamList = {
 };
 
 const ChatStack = createNativeStackNavigator<ChatStackParamList>();
-
-const Tab = createBottomTabNavigator();
 
 const ChatTabScreen = () => {
   const { userInfo } = useContext(AuthContext);
@@ -53,10 +128,10 @@ const ChatTabScreen = () => {
   );
 };
 
+const Tab = createBottomTabNavigator();
+
 const TabNavigator: React.FC = () => {
   const { totalItems } = useContext(CartContext);
-  // Không cần lấy userInfo ở đây nữa nếu không dùng cho logic render Tab trực tiếp
-
 
   return (
     <Tab.Navigator
@@ -80,17 +155,17 @@ const TabNavigator: React.FC = () => {
         },
         tabBarActiveTintColor: '#3da9fc',
         tabBarInactiveTintColor: 'gray',
-        headerShown: false, // Tắt Header của Tab (Dùng Header của Stack bên trong để thay thế)
+        headerShown: false,
       })}
     >
       <Tab.Screen 
         name="HomeTab" 
-        component={HomeScreen} 
+        component={HomeStackScreen} 
         options={{ title: 'Trang chủ' }} 
       />
       <Tab.Screen 
         name="CartTab" 
-        component={CartScreen} 
+        component={CartStackScreen} 
         options={{ 
           title: 'Giỏ hàng',
           tabBarBadge: totalItems > 0 ? totalItems : undefined 
@@ -103,7 +178,7 @@ const TabNavigator: React.FC = () => {
       />
       <Tab.Screen 
         name="ProfileTab" 
-        component={ProfileScreen} 
+        component={ProfileStackScreen} 
         options={{ title: 'Tài khoản' }} 
       />
     </Tab.Navigator>

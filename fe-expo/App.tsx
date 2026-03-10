@@ -2,6 +2,7 @@ import React from 'react';
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 import { SocketProvider } from './context/SocketContext';
+import { CompareProvider } from './context/CompareContext';
 import AppNavigator from './navigation/AppNavigator';
 
 const App: React.FC = () => {
@@ -9,7 +10,9 @@ const App: React.FC = () => {
     <AuthProvider>
       <SocketProvider>
         <CartProvider>
-          <AppNavigator />
+          <CompareProvider>
+            <AppNavigator />
+          </CompareProvider>
         </CartProvider>
       </SocketProvider>
     </AuthProvider>
