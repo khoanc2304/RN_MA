@@ -8,6 +8,7 @@ export interface CartItem {
   product: Product;
   quantity: number;
   size: number;
+  selected?: boolean; // Thêm trạng thái chọn
 }
 
 interface CartContextType {
@@ -16,9 +17,14 @@ interface CartContextType {
   removeFromCart: (productId: string, size: number) => void;
   increaseQuantity: (productId: string, size: number) => void;
   decreaseQuantity: (productId: string, size: number) => void;
+  toggleSelectItem: (productId: string, size: number) => void; // Chọn món
+  toggleSelectAll: (isSelected: boolean) => void; // Chọn tất cả
+  removeSelectedItems: () => void; // Xoá những món đã mua
   clearCart: () => void;
   totalPrice: number;
   totalItems: number;
+  selectedTotalPrice: number; // Tổng tiền các món đang được chọn
+  selectedTotalItems: number; // Tổng số lượng các món đang được chọn
 }
 
 export const CartContext = createContext<CartContextType>({
@@ -27,9 +33,14 @@ export const CartContext = createContext<CartContextType>({
   removeFromCart: () => {},
   increaseQuantity: () => {},
   decreaseQuantity: () => {},
+  toggleSelectItem: () => {},
+  toggleSelectAll: () => {},
+  removeSelectedItems: () => {},
   clearCart: () => {},
   totalPrice: 0,
   totalItems: 0,
+  selectedTotalPrice: 0,
+  selectedTotalItems: 0,
 });
 
 export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -43,7 +54,13 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         try {
           const storedCart = await AsyncStorage.getItem(`cart_${userInfo._id}`);
           if (storedCart) {
-            setCartItems(JSON.parse(storedCart));
+            const parsed = JSON.parse(storedCart);
+            // Đảm bảo các item cũ cũng có trường selected mặc định là true
+            const normalized = parsed.map((item: CartItem) => ({
+              ...item,
+              selected: item.selected !== undefined ? item.selected : true
+            }));
+            setCartItems(normalized);
           } else {
             setCartItems([]);
           }
@@ -51,14 +68,13 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           console.log('Lỗi load cart từ AsyncStorage:', error);
         }
       } else {
-        // Khi logout (userInfo null) -> Xoá khỏi Context
         setCartItems([]);
       }
     };
     loadCartData();
   }, [userInfo]);
 
-  // Save cart mỗi khi có sự thay đổi (Add, remove, clear, v.v...)
+  // Save cart mỗi khi có sự thay đổi
   const saveCartToStorage = async (newCart: CartItem[]) => {
     if (userInfo && userInfo._id) {
       try {
@@ -76,7 +92,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const sizeInfo = product.sizes?.find(s => s.size === size);
       const stock = sizeInfo ? sizeInfo.stock : 0;
       
-      let updatedCart = [...prev];
+      let updatedCart: CartItem[] = [];
       if (existingItem) {
         if (existingItem.quantity + quantity > stock) {
           Alert.alert('Hết hàng', `Rất tiếc, size ${size} chỉ còn ${stock} đôi trong kho.`);
@@ -84,7 +100,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
         updatedCart = prev.map(item =>
           item.product._id === product._id && item.size === size
-            ? { ...item, quantity: item.quantity + quantity }
+            ? { ...item, quantity: item.quantity + quantity, selected: true } // Luôn chọn khi add thêm
             : item
         );
       } else {
@@ -92,7 +108,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           Alert.alert('Hết hàng', `Rất tiếc, size ${size} chỉ còn ${stock} đôi trong kho.`);
           return prev;
         }
-        updatedCart = [...prev, { product, quantity, size }];
+        updatedCart = [...prev, { product, quantity, size, selected: true }];
       }
 
       saveCartToStorage(updatedCart);
@@ -119,7 +135,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             Alert.alert('Hết hàng', `Rất tiếc, size ${size} chỉ còn ${stock} đôi trong kho.`);
             return item;
           }
-          return { ...item, quantity: item.quantity + 1 };
+          return { ...item, quantity: item.quantity + 1, selected: true }; // Tự động chọn lại nếu tăng số lượng
         }
         return item;
       });
@@ -141,13 +157,50 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     });
   };
 
-  const clearCart = () => {
-    setCartItems([]);
-    saveCartToStorage([]); // Làm rỗng cart trên storage
+  const toggleSelectItem = (productId: string, size: number) => {
+    setCartItems(prev => {
+      const updatedCart = prev.map(item => 
+        item.product._id === productId && item.size === size
+          ? { ...item, selected: !item.selected }
+          : item
+      );
+      saveCartToStorage(updatedCart);
+      return updatedCart;
+    });
   };
 
+  const toggleSelectAll = (isSelected: boolean) => {
+    setCartItems(prev => {
+      const updatedCart = prev.map(item => ({ ...item, selected: isSelected }));
+      saveCartToStorage(updatedCart);
+      return updatedCart;
+    });
+  };
+
+  const removeSelectedItems = () => {
+    setCartItems(prev => {
+      const updatedCart = prev.filter(item => !item.selected);
+      saveCartToStorage(updatedCart);
+      return updatedCart;
+    });
+  };
+
+  const clearCart = () => {
+    setCartItems([]);
+    saveCartToStorage([]);
+  };
+
+  // Tính toán các thông số tổng
   const totalPrice = cartItems.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
   const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+  
+  const selectedTotalPrice = cartItems
+    .filter(item => item.selected)
+    .reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+    
+  const selectedTotalItems = cartItems
+    .filter(item => item.selected)
+    .reduce((sum, item) => sum + item.quantity, 0);
 
   return (
     <CartContext.Provider
@@ -157,9 +210,14 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         removeFromCart,
         increaseQuantity,
         decreaseQuantity,
+        toggleSelectItem,
+        toggleSelectAll,
+        removeSelectedItems,
         clearCart,
         totalPrice,
         totalItems,
+        selectedTotalPrice,
+        selectedTotalItems,
       }}
     >
       {children}

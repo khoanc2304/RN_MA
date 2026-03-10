@@ -19,7 +19,6 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
       <View style={styles.container}>
         <View style={styles.authBox}>
           <Ionicons name="person-circle-outline" size={80} color="#3da9fc" />
-          <Text style={styles.title}>Chào mừng bác!</Text>
           <Text style={styles.subtitle}>Đăng nhập để xem hồ sơ và quản lý đơn hàng</Text>
           <TouchableOpacity style={styles.button} onPress={() => navigation.getParent()?.navigate('Login')}>
             <Text style={styles.buttonText}>Đăng Nhập Ngay</Text>
@@ -46,8 +45,8 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
       </View>
 
       <View style={styles.menuBox}>
-         <TouchableOpacity 
-          style={styles.menuItem} 
+        <TouchableOpacity
+          style={styles.menuItem}
           onPress={() => navigation.navigate('OrderHistory')}
         >
           <View style={[styles.menuIcon, { backgroundColor: '#e3f2fd' }]}>
@@ -61,7 +60,7 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
       {userInfo?.role === 'admin' && (
         <View style={styles.adminBox}>
           <Text style={styles.sectionTitle}>Bảng điều khiển Admin</Text>
-          
+
           <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('AdminProducts')}>
             <View style={[styles.menuIcon, { backgroundColor: '#f0f4f8' }]}>
               <Ionicons name="cube-outline" size={22} color="#3da9fc" />

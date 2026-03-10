@@ -10,13 +10,16 @@ type CheckoutScreenRouteProp = RouteProp<RootStackParamList, 'Checkout'>;
 
 const CheckoutScreen: React.FC = () => {
   const { userInfo } = useContext(AuthContext);
-  const { cartItems, totalPrice, clearCart } = useContext(CartContext);
+  const { cartItems, selectedTotalPrice, removeSelectedItems } = useContext(CartContext);
   const navigation = useNavigation();
 
   const [name, setName] = useState(userInfo?.name || '');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Chỉ lấy những món đã được chọn
+  const itemsToCheckout = cartItems.filter(item => item.selected);
 
   const handlePlaceOrder = async () => {
     if (!name.trim() || !phone.trim() || !address.trim()) {
@@ -26,7 +29,7 @@ const CheckoutScreen: React.FC = () => {
 
     try {
       setLoading(true);
-      const orderItems = cartItems.map(item => ({
+      const orderItems = itemsToCheckout.map(item => ({
         productId: item.product._id,
         name: item.product.name,
         price: item.product.price,
@@ -38,10 +41,10 @@ const CheckoutScreen: React.FC = () => {
         orderItems,
         shippingAddress: { name, phone, address },
         paymentMethod: 'COD',
-        totalPrice
+        totalPrice: selectedTotalPrice
       });
 
-      clearCart();
+      removeSelectedItems(); // Chỉ xoá những món đã mua
       Alert.alert('Gửi đơn thành công', 'Đơn hàng của bạn đang được xử lý!', [
         { text: 'OK', onPress: () => navigation.navigate('MainTabs' as never) }
       ]);
@@ -52,10 +55,13 @@ const CheckoutScreen: React.FC = () => {
     }
   };
 
-  if (cartItems.length === 0) {
+  if (itemsToCheckout.length === 0) {
     return (
       <View style={styles.center}>
-        <Text style={styles.emptyText}>Giỏ hàng của bạn đang trống.</Text>
+        <Text style={styles.emptyText}>Bạn chưa chọn sản phẩm nào để thanh toán.</Text>
+        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+          <Text style={styles.backBtnText}>Quay lại Giỏ hàng</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -92,9 +98,16 @@ const CheckoutScreen: React.FC = () => {
 
       <View style={styles.summaryBox}>
         <Text style={styles.summaryTitle}>Tóm tắt đơn hàng</Text>
-        <Text style={styles.summaryText}>Số lượng sản phẩm: {cartItems.reduce((acc, item) => acc + item.quantity, 0)}</Text>
-        <Text style={styles.summaryText}>Tổng tiền thanh toán: <Text style={styles.price}>{totalPrice.toLocaleString('vi-VN')} đ</Text></Text>
-        <Text style={styles.summaryText}>Phương thức: Thanh toán khi nhận hàng (COD)</Text>
+        <Text style={styles.summaryText}>Số lượng sản phẩm: {itemsToCheckout.reduce((acc, item) => acc + item.quantity, 0)}</Text>
+        <View style={styles.itemList}>
+          {itemsToCheckout.map((item, index) => (
+            <Text key={index} style={styles.itemBrief}>
+              • {item.product.name} (Size: {item.size}) x{item.quantity}
+            </Text>
+          ))}
+        </View>
+        <Text style={styles.summaryText}>Tổng tiền thanh toán: <Text style={styles.price}>{selectedTotalPrice.toLocaleString('vi-VN')} đ</Text></Text>
+        <Text style={styles.summaryText}>Phương thức: COD</Text>
       </View>
 
       <TouchableOpacity 
@@ -205,6 +218,28 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '800',
     letterSpacing: 0.5,
+  },
+  backBtn: {
+    marginTop: 20,
+    padding: 12,
+    backgroundColor: '#e3f2fd',
+    borderRadius: 10,
+  },
+  backBtnText: {
+    color: '#3da9fc',
+    fontWeight: '700',
+  },
+  itemList: {
+    marginVertical: 10,
+    backgroundColor: '#f8fafc',
+    padding: 10,
+    borderRadius: 8,
+  },
+  itemBrief: {
+    fontSize: 13,
+    color: '#495057',
+    marginBottom: 4,
+    fontStyle: 'italic',
   }
 });
 

@@ -100,7 +100,7 @@ export type ChatStackParamList = {
 const ChatStack = createNativeStackNavigator<ChatStackParamList>();
 
 const ChatTabScreen = () => {
-  const { userInfo } = useContext(AuthContext);
+  const { userInfo, token } = useContext(AuthContext);
 
   return (
     <ChatStack.Navigator>
@@ -132,6 +132,7 @@ const Tab = createBottomTabNavigator();
 
 const TabNavigator: React.FC = () => {
   const { totalItems } = useContext(CartContext);
+  const { userInfo, token } = useContext(AuthContext);
 
   return (
     <Tab.Navigator
@@ -171,11 +172,13 @@ const TabNavigator: React.FC = () => {
           tabBarBadge: totalItems > 0 ? totalItems : undefined 
         }} 
       />
-      <Tab.Screen 
-        name="ChatTab" 
-        component={ChatTabScreen} 
-        options={{ title: 'Chat' }} 
-      />
+      {token && (
+        <Tab.Screen 
+          name="ChatTab" 
+          component={ChatTabScreen} 
+          options={{ title: 'Chat' }} 
+        />
+      )}
       <Tab.Screen 
         name="ProfileTab" 
         component={ProfileStackScreen} 
